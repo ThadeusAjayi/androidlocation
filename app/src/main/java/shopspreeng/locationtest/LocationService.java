@@ -18,8 +18,8 @@ public class LocationService extends IntentService {
 
     public static final String NAME = LocationService.class.getSimpleName();
 
-    LocationService() {
-        super(NAME);
+    public LocationService() {
+        super("LocationService");
     }
 
 
