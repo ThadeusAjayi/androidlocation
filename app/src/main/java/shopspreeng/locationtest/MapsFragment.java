@@ -8,6 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -17,7 +23,7 @@ import android.view.ViewGroup;
  * Use the {@link MapsFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapsFragment extends Fragment {
+public class MapsFragment extends Fragment implements OnMapReadyCallback {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -28,6 +34,9 @@ public class MapsFragment extends Fragment {
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
+
+    GoogleMap gmap;
+    boolean mapReady;
 
     public MapsFragment() {
         // Required empty public constructor
@@ -89,6 +98,16 @@ public class MapsFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mapReady = true;
+        gmap = googleMap;
+
+        LatLng lastLocation = MainActivity.getLatLng();
+        CameraPosition target = CameraPosition.builder().target(lastLocation).zoom(14).build();
+        gmap.moveCamera(CameraUpdateFactory.newCameraPosition(target));
     }
 
     /**

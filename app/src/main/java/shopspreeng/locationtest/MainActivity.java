@@ -36,6 +36,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.model.LatLng;
 
 import static android.content.ContentValues.TAG;
 
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     static Activity mCurrentActivity;
 
+    static LatLng mLatLng;
+
     public static final int LOCATION_SETTINGS_REQUEST = 1000;
 
     @Override
@@ -68,11 +71,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .addOnConnectionFailedListener(this)
                 .build();
 
+
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.fragment_container, new MapsFragment())
                 .commit();
 
 
+
+    }
+
+    public static void setLatLng (LatLng latLng) {
+        mLatLng = latLng;
+    }
+
+    public static LatLng getLatLng () {
+        return mLatLng;
     }
 
     public static Activity getCurrentActivity(){
@@ -131,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     public void onLocationChanged(Location location) {
         messageTextView.setText("Latitude: " + location.getLatitude() + "\n" + "Longitude: " + location.getLongitude());
+        setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
     }
 
     void requestPermissions () {
