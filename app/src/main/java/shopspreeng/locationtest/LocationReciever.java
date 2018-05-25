@@ -18,8 +18,7 @@ public class LocationReciever extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         if (intent.getAction().matches("android.location.PROVIDERS_CHANGED")) {
-            Toast.makeText(context, "in android.location.PROVIDERS_CHANGED",
-                    Toast.LENGTH_SHORT).show();
+            context.startService(new Intent(context, LocationService.class));
         }
     }
 }

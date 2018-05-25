@@ -57,7 +57,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     @Override
     protected void onStart() {
-        registerReceiver(locationReciever, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+        //registerReceiver(locationReciever, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+        Utils.checkLocation(this);
         googleApiClient.connect();
         super.onStart();
     }
@@ -65,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     protected void onStop() {
         if (locationReciever != null) {
-           unregisterReceiver(locationReciever);
+          // unregisterReceiver(locationReciever);
         }
         if (googleApiClient.isConnected())
             googleApiClient.disconnect();
