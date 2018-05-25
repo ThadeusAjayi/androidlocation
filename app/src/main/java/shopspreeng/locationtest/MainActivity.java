@@ -2,10 +2,12 @@ package shopspreeng.locationtest;
 
 import android.*;
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -23,10 +25,18 @@ import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by Thadeus-APMIS on 5/24/2018.
@@ -34,10 +44,15 @@ import com.google.android.gms.location.LocationServices;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, LocationListener {
 
+    private static final int REQUEST_CHECK_SETTINGS = 1000;
     TextView messageTextView;
     GoogleApiClient googleApiClient;
     LocationRequest locationRequest;
     LocationReciever locationReciever;
+
+    static Activity mCurrentActivity;
+
+    public static final int LOCATION_SETTINGS_REQUEST = 1000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,12 +67,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .addOnConnectionFailedListener(this)
                 .build();
 
+        setCurrentActivity(this);
 
+    }
+
+    public static Activity getCurrentActivity(){
+        return mCurrentActivity;
+    }
+    public void setCurrentActivity(Activity mCurrentActivity){
+        MainActivity.mCurrentActivity = mCurrentActivity;
     }
 
     @Override
     protected void onStart() {
-        //registerReceiver(locationReciever, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+        registerReceiver(locationReciever, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
         Utils.checkLocation(this);
         googleApiClient.connect();
         super.onStart();
@@ -66,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     protected void onStop() {
         if (locationReciever != null) {
-          // unregisterReceiver(locationReciever);
+           unregisterReceiver(locationReciever);
         }
         if (googleApiClient.isConnected())
             googleApiClient.disconnect();
@@ -75,9 +98,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        locationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(1000);
+        locationRequest = Utils.locationRequest();
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -149,6 +170,38 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             // other 'case' lines to check for other
             // permissions this application might request
         }
+    }
+
+    public void showTurnOnLocationDialog() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(Utils.locationRequest());
+        builder.setAlwaysShow(true);
+
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        Log.i(TAG, "All location settings are satisfied.");
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        Log.i(TAG, "Location settings are not satisfied. Show the user a dialog to upgrade location settings ");
+
+                        try {
+                            // Show the dialog by calling startResolutionForResult(), and check the result
+                            // in onActivityResult().
+                            status.startResolutionForResult(MainActivity.this, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.i(TAG, "PendingIntent unable to execute request.");
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.i(TAG, "Location settings are inadequate, and cannot be fixed here. Dialog not created.");
+                        break;
+                }
+            }
+        });
     }
 
 }
