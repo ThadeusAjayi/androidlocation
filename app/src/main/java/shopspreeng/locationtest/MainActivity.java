@@ -1,11 +1,7 @@
 package shopspreeng.locationtest;
 
-import android.*;
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -13,13 +9,10 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
@@ -29,7 +22,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -44,7 +36,7 @@ import static android.content.ContentValues.TAG;
  * Created by Thadeus-APMIS on 5/24/2018.
  */
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, LocationListener, MapsFragment.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, LocationListener {
 
     private static final int REQUEST_CHECK_SETTINGS = 1000;
     TextView messageTextView;
@@ -54,9 +46,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     static Activity mCurrentActivity;
 
-    static LatLng mLatLng;
-
     public static final int LOCATION_SETTINGS_REQUEST = 1000;
+
+    LocationInteractionListener mLocationInteractionListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,21 +63,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .addOnConnectionFailedListener(this)
                 .build();
 
-
         getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, new MapsFragment())
+                .add(R.id.fragment_container, new MapsFragmentView())
                 .commit();
 
 
 
-    }
-
-    public static void setLatLng (LatLng latLng) {
-        mLatLng = latLng;
-    }
-
-    public static LatLng getLatLng () {
-        return mLatLng;
     }
 
     public static Activity getCurrentActivity(){
@@ -144,7 +127,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     public void onLocationChanged(Location location) {
         messageTextView.setText("Latitude: " + location.getLatitude() + "\n" + "Longitude: " + location.getLongitude());
-        setLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+        if (mLocationInteractionListener != null) {
+            mLocationInteractionListener.onLocationInteractionChanged(new LatLng(location.getLatitude(), location.getLongitude()));
+        }
     }
 
     void requestPermissions () {
@@ -223,8 +208,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         });
     }
 
-    @Override
-    public void onFragmentInteraction(Uri uri) {
+    public interface LocationInteractionListener {
+
+        void onLocationInteractionChanged (LatLng latLng);
 
     }
 }
